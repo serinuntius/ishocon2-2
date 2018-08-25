@@ -1,0 +1,25 @@
+{{ define "content" }}
+<div class="jumbotron">
+  <div class="container">
+    <h1>{{ .candidate.Name }}</h1>
+  </div>
+</div>
+<div class="container">
+  <div class="row">
+    <div id="info" class="jumbotron">
+      <h2>得票数</h2>
+      <p id="votes" >{{ .votes }}</p>
+      <h2>政党</h2>
+      <p id="party" >{{ .candidate.PoliticalParty }}</p>
+      <h2>性別</h2>
+      <p id="sex" >{{ .candidate.Sex }}</p>
+      <h2>支持者の声</h2>
+      <ul id="voice" >
+        {{ range $index, $keyword := .keywords }}
+          <li>{{ $keyword }}</li>
+        {{ end }}
+      </ul>
+    </div>
+  </div>
+</div>
+{{ end }}
