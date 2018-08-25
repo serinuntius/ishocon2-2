@@ -422,10 +422,11 @@ func (w bodyCacheWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
-
 var bcwPool = sync.Pool{
 	New: func() interface{} {
-		return &bodyCacheWriter{}
+		return &bodyCacheWriter{
+			body: &bytes.Buffer{},
+		}
 	},
 }
 
