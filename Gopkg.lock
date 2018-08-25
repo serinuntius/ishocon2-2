@@ -18,6 +18,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/gin-contrib/pprof"
+  packages = ["."]
+  revision = "0ed7ffb6a18989cba60c46dfad1fbcba65684750"
+
+[[projects]]
+  branch = "master"
   name = "github.com/gin-contrib/sse"
   packages = ["."]
   revision = "22d885f9ecc78bf4ee5d72b937e4bbcdc58e8cae"
@@ -83,9 +89,52 @@
   revision = "57fdcb988a5c543893cc61bce354a6e24ab70022"
 
 [[projects]]
+  name = "github.com/satori/go.uuid"
+  packages = ["."]
+  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+  version = "v1.2.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/serinuntius/graqt"
+  packages = ["."]
+  revision = "3fe10c9a3a8074dae6f54889bc6c2b19b9897d70"
+
+[[projects]]
+  name = "github.com/shogo82148/go-sql-proxy"
+  packages = ["."]
+  revision = "f4671c3635aba87ef606b7cf4d736b29c401ee63"
+  version = "v0.1.0"
+
+[[projects]]
   name = "github.com/ugorji/go"
   packages = ["codec"]
   revision = "c88ee250d0221a57af388746f5cf03768c21d6e2"
+
+[[projects]]
+  name = "go.uber.org/atomic"
+  packages = ["."]
+  revision = "1ea20fb1cbb1cc08cbd0d913a96dead89aa18289"
+  version = "v1.3.2"
+
+[[projects]]
+  name = "go.uber.org/multierr"
+  packages = ["."]
+  revision = "3c4937480c32f4c13a875a1829af76c98ca3d40a"
+  version = "v1.1.0"
+
+[[projects]]
+  name = "go.uber.org/zap"
+  packages = [
+    ".",
+    "buffer",
+    "internal/bufferpool",
+    "internal/color",
+    "internal/exit",
+    "zapcore"
+  ]
+  revision = "ff33455a0e382e8a81d14dd7c922020b6b5e7982"
+  version = "v1.9.1"
 
 [[projects]]
   branch = "master"
@@ -113,6 +162,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0544379671a224b4e966b9dedf74d30896d8e618b2086b99b3a6078c3526d30b"
+  inputs-digest = "4db6594574c13e9e2242ca7a3360a4abddfa95b9e7ca37816c39f8712d597442"
   solver-name = "gps-cdcl"
   solver-version = 1

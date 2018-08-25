@@ -40,3 +40,11 @@
 [prune]
   go-tests = true
   unused-packages = true
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/gin-contrib/pprof"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/serinuntius/graqt"

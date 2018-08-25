@@ -8,13 +8,18 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/contrib/sessions"
-	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/serinuntius/graqt"
 )
 
-var db *sql.DB
+var (
+	db           *sql.DB
+	traceEnabled = os.Getenv("GRAQT_TRACE")
+	driverName   = "mysql"
+)
 
 func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
@@ -25,15 +30,25 @@ func getEnv(key, fallback string) string {
 
 func main() {
 	// database setting
+	if traceEnabled == "1" {
+		driverName = "mysql-tracer"
+		graqt.SetRequestLogger("log/request.log")
+		graqt.SetQueryLogger("log/query.log")
+	}
+
 	user := getEnv("ISHOCON2_DB_USER", "ishocon")
 	pass := getEnv("ISHOCON2_DB_PASSWORD", "ishocon")
 	dbname := getEnv("ISHOCON2_DB_NAME", "ishocon2")
-	db, _ = sql.Open("mysql", user+":"+pass+"@/"+dbname)
+	db, _ = sql.Open(driverName, user+":"+pass+"@/"+dbname)
 	db.SetMaxIdleConns(5)
 
 	gin.SetMode(gin.DebugMode)
 	r := gin.Default()
-	r.Use(static.Serve("/css", static.LocalFile("public/css", true)))
+	if traceEnabled == "1" {
+		r.Use(graqt.RequestIdForGin())
+	}
+	pprof.Register(r)
+
 	layout := "templates/layout.tmpl"
 
 	// session store
