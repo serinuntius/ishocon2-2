@@ -83,10 +83,10 @@ func main() {
 	db.SetMaxOpenConns(40)
 	db.SetConnMaxLifetime(300 * time.Second)
 
-	gin.SetMode(gin.DebugMode)
+	//gin.SetMode(gin.DebugMode)
 	//gin.SetMode(gin.ReleaseMode)
 
-	r := gin.Default()
+	r := gin.New()
 
 	pprof.Register(r)
 
