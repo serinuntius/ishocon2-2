@@ -283,8 +283,8 @@ func main() {
 
 		user, userErr := getUser(c, c.PostForm("name"), c.PostForm("address"), c.PostForm("mynumber"))
 		if userErr != nil {
+			log.Println(userErr)
 			if err := voteErrorCache(c, "個人情報に誤りがあります"); err != nil {
-				log.Println(userErr)
 				log.Fatal(err)
 			}
 			return
