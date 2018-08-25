@@ -230,6 +230,7 @@ func main() {
 
 		// initでもcache消す
 		store.Flush()
+		rc.FlushAll()
 
 		candidates = getAllCandidate(c)
 
