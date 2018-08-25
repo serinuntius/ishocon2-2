@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/gin-contrib/pprof"
-	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/serinuntius/graqt"
@@ -49,12 +48,9 @@ func main() {
 	}
 	pprof.Register(r)
 
-	layout := "templates/layout.tmpl"
+	r.FuncMap = template.FuncMap{"indexPlus1": func(i int) int { return i + 1 }}
 
-	// session store
-	store := sessions.NewCookieStore([]byte("mysession"))
-	store.Options(sessions.Options{HttpOnly: true})
-	r.Use(sessions.Sessions("showwin_happy", store))
+	r.LoadHTMLGlob("templates/*.tmpl")
 
 	// GET /
 	r.GET("/", func(c *gin.Context) {
@@ -96,9 +92,7 @@ func main() {
 			}
 		}
 
-		funcs := template.FuncMap{"indexPlus1": func(i int) int { return i + 1 }}
-		r.SetHTMLTemplate(template.Must(template.New("main").Funcs(funcs).ParseFiles(layout, "templates/index.tmpl")))
-		c.HTML(http.StatusOK, "base", gin.H{
+		c.HTML(http.StatusOK, "index.tmpl", gin.H{
 			"candidates": candidates,
 			"parties":    partyResults,
 			"sexRatio":   sexRatio,
@@ -116,8 +110,7 @@ func main() {
 		candidateIDs := []int{candidateID}
 		keywords := getVoiceOfSupporter(candidateIDs)
 
-		r.SetHTMLTemplate(template.Must(template.ParseFiles(layout, "templates/candidate.tmpl")))
-		c.HTML(http.StatusOK, "base", gin.H{
+		c.HTML(http.StatusOK, "candidate.tmpl", gin.H{
 			"candidate": candidate,
 			"votes":     votes,
 			"keywords":  keywords,
@@ -142,8 +135,7 @@ func main() {
 		}
 		keywords := getVoiceOfSupporter(candidateIDs)
 
-		r.SetHTMLTemplate(template.Must(template.ParseFiles(layout, "templates/political_party.tmpl")))
-		c.HTML(http.StatusOK, "base", gin.H{
+		c.HTML(http.StatusOK, "political_party.tmpl", gin.H{
 			"politicalParty": partyName,
 			"votes":          votes,
 			"candidates":     candidates,
@@ -155,8 +147,7 @@ func main() {
 	r.GET("/vote", func(c *gin.Context) {
 		candidates := getAllCandidate()
 
-		r.SetHTMLTemplate(template.Must(template.ParseFiles(layout, "templates/vote.tmpl")))
-		c.HTML(http.StatusOK, "base", gin.H{
+		c.HTML(http.StatusOK, "vote.tmpl", gin.H{
 			"candidates": candidates,
 			"message":    "",
 		})
@@ -171,7 +162,6 @@ func main() {
 		voteCount, _ := strconv.Atoi(c.PostForm("vote_count"))
 
 		var message string
-		r.SetHTMLTemplate(template.Must(template.ParseFiles(layout, "templates/vote.tmpl")))
 		if userErr != nil {
 			message = "個人情報に誤りがあります"
 		} else if user.Votes < voteCount+votedCount {
@@ -188,7 +178,7 @@ func main() {
 			}
 			message = "投票に成功しました"
 		}
-		c.HTML(http.StatusOK, "base", gin.H{
+		c.HTML(http.StatusOK, "vote.tmpl", gin.H{
 			"candidates": candidates,
 			"message":    message,
 		})
