@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -19,6 +20,22 @@ type User struct {
 	Votes      int
 }
 
+var userPool = sync.Pool{
+	New: func() interface{} {
+		return &User{}
+	},
+}
+
+func newUser() *User {
+	return userPool.Get().(*User)
+}
+
+func (u *User) close() {
+	userPool.Put(u)
+}
+
+
+
 func (u *User) MarshalBinary() (data []byte, err error) {
 	return json.Marshal(u)
 }
@@ -31,7 +48,7 @@ func (u *User) UnmarshalBinary(data []byte) error {
 }
 
 func getUser(ctx context.Context, name string, address string, myNumber string) (*User, error) {
-	user := User{}
+	user := *newUser()
 
 	if err := rc.Get(myNumberKey(myNumber)).Scan(&user); err != nil && err != redis.Nil {
 		return nil, errors.Wrap(err, "Failed to redis Scan")
