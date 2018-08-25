@@ -48,3 +48,7 @@
 [[constraint]]
   branch = "master"
   name = "github.com/serinuntius/graqt"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/gin-contrib/cache"

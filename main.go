@@ -7,7 +7,10 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"time"
 
+	"github.com/gin-contrib/cache"
+	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
@@ -48,12 +51,15 @@ func main() {
 	}
 	pprof.Register(r)
 
+	// add cache store(not redis)
+	store := persistence.NewInMemoryStore(time.Minute)
+
 	r.FuncMap = template.FuncMap{"indexPlus1": func(i int) int { return i + 1 }}
 
 	r.LoadHTMLGlob("templates/*.tmpl")
 
 	// GET /
-	r.GET("/", func(c *gin.Context) {
+	r.GET("/", cache.CachePage(store, time.Minute, func(c *gin.Context) {
 		electionResults := getElectionResult()
 
 		// 上位10人と最下位のみ表示
@@ -97,10 +103,10 @@ func main() {
 			"parties":    partyResults,
 			"sexRatio":   sexRatio,
 		})
-	})
+	}))
 
 	// GET /candidates/:candidateID(int)
-	r.GET("/candidates/:candidateID", func(c *gin.Context) {
+	r.GET("/candidates/:candidateID", cache.CachePage(store, time.Minute, func(c *gin.Context) {
 		candidateID, _ := strconv.Atoi(c.Param("candidateID"))
 		candidate, err := getCandidate(candidateID)
 		if err != nil {
@@ -115,10 +121,10 @@ func main() {
 			"votes":     votes,
 			"keywords":  keywords,
 		})
-	})
+	}))
 
 	// GET /political_parties/:name(string)
-	r.GET("/political_parties/:name", func(c *gin.Context) {
+	r.GET("/political_parties/:name", cache.CachePage(store, time.Minute, func(c *gin.Context) {
 		partyName := c.Param("name")
 		var votes int
 		electionResults := getElectionResult()
@@ -141,7 +147,7 @@ func main() {
 			"candidates":     candidates,
 			"keywords":       keywords,
 		})
-	})
+	}))
 
 	// GET /vote
 	r.GET("/vote", func(c *gin.Context) {
@@ -178,6 +184,9 @@ func main() {
 			}
 			message = "投票に成功しました"
 		}
+
+		// postが終わるたびに消す
+		store.Flush()
 		c.HTML(http.StatusOK, "vote.tmpl", gin.H{
 			"candidates": candidates,
 			"message":    message,
@@ -186,6 +195,9 @@ func main() {
 
 	r.GET("/initialize", func(c *gin.Context) {
 		db.Exec("DELETE FROM votes")
+
+		// initでもcache消す
+		store.Flush()
 
 		c.String(http.StatusOK, "Finish")
 	})
