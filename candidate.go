@@ -73,24 +73,3 @@ func getCandidatesByPoliticalParty(ctx context.Context, party string) (candidate
 	return
 }
 
-func getElectionResult(ctx context.Context) (result []CandidateElectionResult) {
-	rows, err := db.QueryContext(ctx, `
-		SELECT c.id, c.name, c.political_party, c.sex, voted_count
-		FROM candidates AS c
-		ORDER BY voted_count DESC`)
-	if err != nil {
-		panic(err.Error())
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		r := CandidateElectionResult{}
-		err = rows.Scan(&r.ID, &r.Name, &r.PoliticalParty, &r.Sex, &r.VotedCount)
-		if err != nil {
-			panic(err.Error())
-		}
-		result = append(result, r)
-	}
-
-	return
-}
