@@ -50,16 +50,6 @@ func (u *User) UnmarshalBinary(data []byte) error {
 func getUser(ctx context.Context, name string, address string, myNumber string) (*User, error) {
 	user := *newUser()
 
-	if err := rc.Get(myNumberKey(myNumber)).Scan(&user); err != nil && err != redis.Nil {
-		return nil, errors.Wrap(err, "Failed to redis Scan")
-	} else if err != redis.Nil {
-		// cache exist
-		if err := user.validate(name, address); err != nil {
-			return nil, errors.Wrap(err, "Failed to validate")
-		}
-		return &user, nil
-	}
-
 	row := db.QueryRowContext(ctx, "SELECT * FROM users WHERE mynumber = ?", myNumber)
 	if err := row.Scan(&user.ID, &user.Name, &user.Address, &user.MyNumber, &user.Votes); err != nil {
 		return nil, errors.Wrap(err, "Failed to scan user")
@@ -67,10 +57,6 @@ func getUser(ctx context.Context, name string, address string, myNumber string) 
 
 	if err := user.validate(name, address); err != nil {
 		return nil, errors.Wrap(err, "Failed to validate")
-	}
-
-	if _, err := rc.Set(myNumberKey(myNumber), &user, time.Minute).Result(); err != nil {
-		return nil, errors.Wrap(err, "Failed to Set cache")
 	}
 
 	return &user, nil
