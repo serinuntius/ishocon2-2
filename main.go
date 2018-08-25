@@ -32,8 +32,9 @@ var (
 	driverName   = "mysql"
 	candidates   []Candidate
 
-	candidateMap   map[string]int
-	candidateIdMap map[int]Candidate
+	candidateMap      map[string]int
+	candidateIdMap    map[int]Candidate
+	voteErrorCacheMap map[string][]byte
 )
 
 func getEnv(key, fallback string) string {
@@ -59,6 +60,8 @@ func NewRedisClient() error {
 }
 
 func main() {
+	voteErrorCacheMap = make(map[string][]byte, 10)
+
 	if traceEnabled == "1" {
 		// driverNameは絶対にこれでお願いします。
 		driverName = "mysql-tracer"
@@ -381,7 +384,6 @@ func voteCache(c *gin.Context) error {
 	return nil
 }
 
-var voteErrorCacheMap map[string][]byte
 var errorCacheMutex sync.Mutex
 
 func voteErrorCache(c *gin.Context, msg string) error {
