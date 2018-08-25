@@ -351,14 +351,13 @@ func main() {
 	//r.Run(":8080")
 }
 
-const voteCacheKey = "voteCache"
+var cachedBytes []byte
 
 func voteCache(c *gin.Context) error {
-	cachedBytes, err := rc.Get(voteCacheKey).Bytes()
-	if err != nil && err != redis.Nil {
-		return errors.Wrap(err, "Failed to rc.Get")
-	} else if err == redis.Nil {
-		// cacheがないので普通に返す
+	if len(cachedBytes) > 0 {
+		c.Writer.Write(cachedBytes)
+		return nil
+	} else {
 		bcw := &bodyCacheWriter{
 			body:           &bytes.Buffer{},
 			ResponseWriter: c.Writer,
@@ -374,14 +373,10 @@ func voteCache(c *gin.Context) error {
 		if err != nil {
 			return errors.Wrap(err, "Failed to ReadAll")
 		}
-
-		if _, err := rc.Set(voteCacheKey, bs, time.Minute).Result(); err != nil {
-			return errors.Wrap(err, "Failed to rc.Set")
-		}
+		cachedBytes = bs
+		return nil
 	}
 
-	// cacheがあるのでそれを返す
-	c.Writer.Write(cachedBytes)
 	return nil
 }
 
