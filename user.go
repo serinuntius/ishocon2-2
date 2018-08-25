@@ -50,7 +50,7 @@ func (u *User) UnmarshalBinary(data []byte) error {
 func getUser(ctx context.Context, name string, address string, myNumber string) (*User, error) {
 	user := newUser()
 
-	if err := rc.Get(myNumberKey(myNumber)).Scan(&user); err != nil && err != redis.Nil {
+	if err := rc.Get(myNumberKey(myNumber)).Scan(user); err != nil && err != redis.Nil {
 		return nil, errors.Wrap(err, "Failed to redis Scan")
 	} else if err != redis.Nil {
 		// cache exist
@@ -61,7 +61,7 @@ func getUser(ctx context.Context, name string, address string, myNumber string) 
 	}
 
 	row := db.QueryRowContext(ctx, "SELECT * FROM users WHERE mynumber = ?", myNumber)
-	if err := row.Scan(&user.ID, &user.Name, &user.Address, &user.MyNumber, &user.Votes); err != nil {
+	if err := row.Scan(user.ID, user.Name, user.Address, user.MyNumber, user.Votes); err != nil {
 		return nil, errors.Wrap(err, "Failed to scan user")
 	}
 
@@ -69,7 +69,7 @@ func getUser(ctx context.Context, name string, address string, myNumber string) 
 		return nil, errors.Wrap(err, "Failed to validate")
 	}
 
-	if _, err := rc.Set(myNumberKey(myNumber), &user, time.Minute).Result(); err != nil {
+	if _, err := rc.Set(myNumberKey(myNumber), user, time.Minute).Result(); err != nil {
 		return nil, errors.Wrap(err, "Failed to Set cache")
 	}
 
