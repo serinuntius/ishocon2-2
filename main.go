@@ -2,16 +2,17 @@ package main
 
 import (
 	"bytes"
-	"database/sql"
-	"html/template"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"database/sql"
+	"html/template"
+	"log"
 
 	"github.com/gin-contrib/cache"
 	"github.com/gin-contrib/cache/persistence"
@@ -29,9 +30,17 @@ var (
 	traceEnabled = os.Getenv("GRAQT_TRACE")
 	driverName   = "mysql"
 	candidates   []Candidate
+
 	candidateMap   map[string]int
 	candidateIdMap map[int]Candidate
 )
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
 
 func NewRedisClient() error {
 	rc = redis.NewClient(&redis.Options{
@@ -48,45 +57,50 @@ func NewRedisClient() error {
 	return nil
 }
 
-func getEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
-}
-
 func main() {
-	// database setting
 	if traceEnabled == "1" {
+		// driverNameは絶対にこれでお願いします。
 		driverName = "mysql-tracer"
 		graqt.SetRequestLogger("log/request.log")
 		graqt.SetQueryLogger("log/query.log")
 	}
 
+	// database setting
 	user := getEnv("ISHOCON2_DB_USER", "ishocon")
 	pass := getEnv("ISHOCON2_DB_PASSWORD", "ishocon")
 	dbname := getEnv("ISHOCON2_DB_NAME", "ishocon2")
-	db, _ = sql.Open(driverName, user+":"+pass+"@/"+dbname)
-	db.SetMaxIdleConns(5)
+	var err error
+	db, err = sql.Open(driverName, user+":"+pass+"@unix(/var/run/mysqld/mysqld.sock)/"+dbname)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// redis
 	if err := NewRedisClient(); err != nil {
 		log.Fatal(err)
 	}
 
+	db.SetMaxIdleConns(20)
+	db.SetMaxOpenConns(40)
+	db.SetConnMaxLifetime(300 * time.Second)
+
 	gin.SetMode(gin.DebugMode)
+	//gin.SetMode(gin.ReleaseMode)
+
 	r := gin.Default()
+
+	pprof.Register(r)
+
+	//r.Use(static.Serve("/css", static.LocalFile("public/css", true)))
 	if traceEnabled == "1" {
 		r.Use(graqt.RequestIdForGin())
 	}
-	pprof.Register(r)
-
-	// add cache store(not redis)
-	store := persistence.NewInMemoryStore(time.Minute)
 
 	r.FuncMap = template.FuncMap{"indexPlus1": func(i int) int { return i + 1 }}
 
 	r.LoadHTMLGlob("templates/*.tmpl")
+
+	// template cache store
+	store := persistence.NewInMemoryStore(time.Minute)
 
 	// GET /
 	r.GET("/", cache.CachePage(store, time.Minute, func(c *gin.Context) {
@@ -308,12 +322,10 @@ func main() {
 	r.GET("/initialize", func(c *gin.Context) {
 		db.Exec("DELETE FROM votes")
 
-		// initでもcache消す
-		store.Flush()
 		rc.FlushAll()
+		store.Flush()
 
 		candidates = getAllCandidate(c)
-
 		initialVoteCount := 0
 
 		candidateMap = make(map[string]int, len(candidates))
@@ -324,17 +336,17 @@ func main() {
 			candidateIdMap[c.ID] = c
 
 			// 初期化でキャッシュに0で投票しておく
-			_, err := rc.ZIncrBy(kojinKey(), float64(initialVoteCount), candidateVotedCountKey(c.ID)).Result()
+			_, err = rc.ZIncrBy(kojinKey(), float64(initialVoteCount), candidateVotedCountKey(c.ID)).Result()
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 
-
 		c.String(http.StatusOK, "Finish")
 	})
 
-	r.Run(":8080")
+	r.RunUnix("/var/run/go/go.sock")
+	//r.Run(":8080")
 }
 
 const voteCacheKey = "voteCache"
