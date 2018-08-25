@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"database/sql"
@@ -358,10 +359,7 @@ func voteCache(c *gin.Context) error {
 		return errors.Wrap(err, "Failed to rc.Get")
 	} else if err == redis.Nil {
 		// cacheがないので普通に返す
-		bcw := &bodyCacheWriter{
-			body:           &bytes.Buffer{},
-			ResponseWriter: c.Writer,
-		}
+		bcw := newBCW()
 		c.Writer = bcw
 
 		c.HTML(http.StatusOK, "vote.tmpl", gin.H{
@@ -390,10 +388,7 @@ func voteErrorCache(c *gin.Context, msg string) error {
 		return errors.Wrap(err, "Failed to rc.Get")
 	} else if err == redis.Nil {
 		// cacheがないので普通に返す
-		bcw := &bodyCacheWriter{
-			body:           &bytes.Buffer{},
-			ResponseWriter: c.Writer,
-		}
+		bcw := newBCW()
 		c.Writer = bcw
 
 		c.HTML(http.StatusOK, "vote.tmpl", gin.H{
@@ -408,6 +403,8 @@ func voteErrorCache(c *gin.Context, msg string) error {
 		if _, err := rc.Set(msg, bs, time.Minute).Result(); err != nil {
 			return errors.Wrap(err, "Failed to rc.Set")
 		}
+		bcw.close()
+		return nil
 	}
 
 	// cacheがあるのでそれを返す
@@ -423,4 +420,19 @@ type bodyCacheWriter struct {
 func (w bodyCacheWriter) Write(b []byte) (int, error) {
 	w.body.Write(b)
 	return w.ResponseWriter.Write(b)
+}
+
+
+var bcwPool = sync.Pool{
+	New: func() interface{} {
+		return &bodyCacheWriter{}
+	},
+}
+
+func newBCW() *bodyCacheWriter {
+	return bcwPool.Get().(*bodyCacheWriter)
+}
+
+func (w *bodyCacheWriter) close() {
+	bcwPool.Put(w)
 }
