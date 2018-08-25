@@ -191,30 +191,38 @@ func main() {
 		votedCount := getUserVotedCount(c, user.ID)
 		voteCount, _ := strconv.Atoi(c.PostForm("vote_count"))
 
-		var message string
 		if userErr != nil {
-			message = "個人情報に誤りがあります"
+			if err := voteErrorCache(c,"個人情報に誤りがあります"); err != nil {
+				log.Fatal(err)
+			}
 		} else if user.Votes < voteCount+votedCount {
-			message = "投票数が上限を超えています"
+			if err := voteErrorCache(c,"投票数が上限を超えています"); err != nil {
+				log.Fatal(err)
+			}
 		} else if c.PostForm("candidate") == "" {
-			message = "候補者を記入してください"
+			if err := voteErrorCache(c,"候補者を記入してください"); err != nil {
+				log.Fatal(err)
+			}
 		} else if cndErr != nil {
-			message = "候補者を正しく記入してください"
+			if err := voteErrorCache(c,"候補者を正しく記入してください"); err != nil {
+				log.Fatal(err)
+			}
 		} else if c.PostForm("keyword") == "" {
-			message = "投票理由を記入してください"
+			if err := voteErrorCache(c,"投票理由を記入してください"); err != nil {
+				log.Fatal(err)
+			}
 		} else {
 			for i := 1; i <= voteCount; i++ {
 				createVote(c, user.ID, candidate.ID, c.PostForm("keyword"))
 			}
-			message = "投票に成功しました"
 		}
 
 		// postが終わるたびに消す
 		store.Flush()
-		c.HTML(http.StatusOK, "vote.tmpl", gin.H{
-			"candidates": candidates,
-			"message":    message,
-		})
+
+		if err := voteCache(c); err != nil {
+			log.Fatal(err)
+		}
 	})
 
 	r.GET("/initialize", func(c *gin.Context) {
