@@ -261,7 +261,9 @@ func main() {
 
 	// POST /vote
 	r.POST("/vote", func(c *gin.Context) {
-		if c.PostForm("candidate") == "" {
+		candidateParam := c.PostForm("candidate")
+
+		if candidateParam == "" {
 			if err := voteErrorCache(c, "候補者を記入してください"); err != nil {
 				log.Fatal(err)
 			}
@@ -273,7 +275,7 @@ func main() {
 			return
 		}
 
-		candidateID, ok := candidateMap[c.PostForm("candidate")]
+		candidateID, ok := candidateMap[candidateParam]
 		if !ok {
 			if err := voteErrorCache(c, "候補者を正しく記入してください"); err != nil {
 				log.Fatal(err)
