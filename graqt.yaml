@@ -1,0 +1,3 @@
+aggregates:
+  - /candidates/\d+
+  - /political_parties/.*
