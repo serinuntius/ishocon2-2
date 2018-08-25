@@ -29,6 +29,7 @@ var (
 	rc           *redis.Client
 	traceEnabled = os.Getenv("GRAQT_TRACE")
 	driverName   = "mysql"
+	incrStore    *persistence.InMemoryStore
 	candidates   []Candidate
 
 	candidateMap   map[string]int
@@ -101,6 +102,7 @@ func main() {
 
 	// template cache store
 	store := persistence.NewInMemoryStore(time.Minute)
+	incrStore = persistence.NewInMemoryStore(time.Minute)
 
 	// GET /
 	r.GET("/", cache.CachePage(store, time.Minute, func(c *gin.Context) {
@@ -136,18 +138,20 @@ func main() {
 			}
 		}
 
-		menCount, err := rc.Get(sexKey("男")).Int64()
-		if err != nil && err != redis.Nil {
+		var menCount uint64
+		err = incrStore.Get(sexKey("男"), &menCount)
+		if err != nil && err != persistence.ErrNotStored {
 			log.Fatal(err)
-		} else if err == redis.Nil {
+		} else if err == persistence.ErrNotStored {
 			menCount = 0
 		}
 
-		womenCount, err := rc.Get(sexKey("女")).Int64()
-		if err != nil && err != redis.Nil {
+		var womenCount uint64
+		err = incrStore.Get(sexKey("女"), &womenCount)
+		if err != nil && err != persistence.ErrNotStored {
 			log.Fatal(err)
-		} else if err == redis.Nil {
-			womenCount = 0
+		} else if err == persistence.ErrNotStored {
+			menCount = 0
 		}
 
 		sexRatio := map[string]int{
@@ -207,10 +211,12 @@ func main() {
 			log.Fatal(err)
 		}
 
-		votedCount, err := rc.Get(candidateKey(candidateID)).Int64()
-		if err != nil && err != redis.Nil {
+
+		var votedCount uint64
+		err = incrStore.Get(candidateKey(candidateID), &votedCount)
+		if err != nil && err != persistence.ErrNotStored {
 			log.Fatal(err)
-		} else if err == redis.Nil {
+		} else if err == persistence.ErrNotStored {
 			votedCount = 0
 		}
 
@@ -229,7 +235,13 @@ func main() {
 		var votes int
 
 		for _, c := range candidates {
-			votedCount, err := rc.Get(candidateKey(c.ID)).Int64()
+			var votedCount uint64
+			err = incrStore.Get(candidateKey(c.ID), &votedCount)
+			if err != nil && err != persistence.ErrNotStored {
+				log.Fatal(err)
+			} else if err == persistence.ErrNotStored {
+				votedCount = 0
+			}
 			if err != nil && err != redis.Nil {
 				log.Fatal(err)
 			} else if err == redis.Nil {
@@ -292,10 +304,11 @@ func main() {
 
 		voteCount, _ := strconv.Atoi(c.PostForm("vote_count"))
 
-		userVotedCount, err := rc.Get(userKey(user.ID)).Int64()
-		if err != nil && err != redis.Nil {
+		var userVotedCount uint64
+		err = incrStore.Get(userKey(user.ID), &userVotedCount)
+		if err != nil && err != persistence.ErrNotStored {
 			log.Fatal(err)
-		} else if err == redis.Nil {
+		} else if err == persistence.ErrNotStored {
 			userVotedCount = 0
 		}
 
@@ -324,6 +337,7 @@ func main() {
 
 		rc.FlushAll()
 		store.Flush()
+		incrStore.Flush()
 
 		candidates = getAllCandidate(c)
 		initialVoteCount := 0

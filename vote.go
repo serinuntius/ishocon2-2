@@ -47,7 +47,7 @@ func createVote(ctx context.Context, userID int, candidateID int, keyword string
 	})
 
 	eg.Go(func() error {
-		_, err := rc.IncrBy(candidateKey(candidateID), int64(voteCount)).Result()
+		_, err := incrStore.Increment(candidateKey(candidateID), uint64(voteCount))
 		if err != nil {
 			return errors.Wrap(err, "")
 		}
@@ -55,7 +55,7 @@ func createVote(ctx context.Context, userID int, candidateID int, keyword string
 	})
 
 	eg.Go(func() error {
-		_, err := rc.IncrBy(userKey(userID), int64(voteCount)).Result()
+		_, err := incrStore.Increment(userKey(userID), uint64(voteCount))
 		if err != nil {
 			return errors.Wrap(err, "")
 		}
@@ -64,13 +64,12 @@ func createVote(ctx context.Context, userID int, candidateID int, keyword string
 
 	eg.Go(func() error {
 		sex := candidateIdMap[candidateID].Sex
-		_, err := rc.IncrBy(sexKey(sex), int64(voteCount)).Result()
+		_, err := incrStore.Increment(sexKey(sex), uint64(voteCount))
 		if err != nil {
 			return errors.Wrap(err, "")
 		}
 		return nil
 	})
-
 
 	if err := eg.Wait(); err != nil {
 		return errors.Wrap(err, "Failed to wait")
