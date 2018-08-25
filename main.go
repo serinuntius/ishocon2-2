@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"database/sql"
@@ -380,12 +381,14 @@ func voteCache(c *gin.Context) error {
 	return nil
 }
 
+var voteErrorCacheMap map[string][]byte
+var errorCacheMutex sync.Mutex
+
 func voteErrorCache(c *gin.Context, msg string) error {
-	cachedBytes, err := rc.Get(msg).Bytes()
-	if err != nil && err != redis.Nil {
-		return errors.Wrap(err, "Failed to rc.Get")
-	} else if err == redis.Nil {
-		// cacheがないので普通に返す
+	if errorByte, ok := voteErrorCacheMap[msg]; ok {
+		c.Writer.Write(errorByte)
+		return nil
+	} else {
 		bcw := &bodyCacheWriter{
 			body:           &bytes.Buffer{},
 			ResponseWriter: c.Writer,
@@ -400,14 +403,12 @@ func voteErrorCache(c *gin.Context, msg string) error {
 		if err != nil {
 			return errors.Wrap(err, "Failed to ReadAll")
 		}
-
-		if _, err := rc.Set(msg, bs, time.Minute).Result(); err != nil {
-			return errors.Wrap(err, "Failed to rc.Set")
-		}
+		errorCacheMutex.Lock()
+		voteErrorCacheMap[msg] = bs
+		errorCacheMutex.Unlock()
+		return nil
 	}
 
-	// cacheがあるのでそれを返す
-	c.Writer.Write(cachedBytes)
 	return nil
 }
 
