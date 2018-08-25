@@ -17,7 +17,6 @@ type User struct {
 	Address    string
 	MyNumber   string
 	Votes      int
-	VotedCount int
 }
 
 func (u *User) MarshalBinary() (data []byte, err error) {
@@ -45,7 +44,7 @@ func getUser(ctx context.Context, name string, address string, myNumber string) 
 	}
 
 	row := db.QueryRowContext(ctx, "SELECT * FROM users WHERE mynumber = ?", myNumber)
-	if err := row.Scan(&user.ID, &user.Name, &user.Address, &user.MyNumber, &user.Votes, &user.VotedCount); err != nil {
+	if err := row.Scan(&user.ID, &user.Name, &user.Address, &user.MyNumber, &user.Votes); err != nil {
 		return nil, errors.Wrap(err, "Failed to scan user")
 	}
 
