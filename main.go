@@ -22,15 +22,13 @@ import (
 	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/pkg/errors"
-	"github.com/serinuntius/graqt"
 )
 
 var (
-	db           *sql.DB
-	rc           *redis.Client
-	traceEnabled = os.Getenv("GRAQT_TRACE")
-	driverName   = "mysql"
-	candidates   []Candidate
+	db         *sql.DB
+	rc         *redis.Client
+	driverName = "mysql"
+	candidates []Candidate
 
 	candidateMap      map[string]int
 	candidateIdMap    map[int]Candidate
@@ -62,13 +60,6 @@ func NewRedisClient() error {
 func main() {
 	voteErrorCacheMap = make(map[string][]byte, 10)
 
-	if traceEnabled == "1" {
-		// driverNameは絶対にこれでお願いします。
-		driverName = "mysql-tracer"
-		graqt.SetRequestLogger("log/request.log")
-		graqt.SetQueryLogger("log/query.log")
-	}
-
 	// database setting
 	user := getEnv("ISHOCON2_DB_USER", "ishocon")
 	pass := getEnv("ISHOCON2_DB_PASSWORD", "ishocon")
@@ -93,11 +84,6 @@ func main() {
 	r := gin.New()
 
 	pprof.Register(r)
-
-	//r.Use(static.Serve("/css", static.LocalFile("public/css", true)))
-	if traceEnabled == "1" {
-		r.Use(graqt.RequestIdForGin())
-	}
 
 	r.FuncMap = template.FuncMap{"indexPlus1": func(i int) int { return i + 1 }}
 
