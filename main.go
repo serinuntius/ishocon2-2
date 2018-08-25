@@ -375,6 +375,7 @@ func voteCache(c *gin.Context) error {
 		if _, err := rc.Set(voteCacheKey, bs, time.Minute).Result(); err != nil {
 			return errors.Wrap(err, "Failed to rc.Set")
 		}
+		return nil
 	}
 
 	// cacheがあるのでそれを返す
@@ -435,5 +436,6 @@ func newBCW() *bodyCacheWriter {
 }
 
 func (w *bodyCacheWriter) close() {
+	w.body.Reset()
 	bcwPool.Put(w)
 }
