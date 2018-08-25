@@ -1,4 +1,27 @@
-{{ define "content" }}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html" charset="utf-8">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <title>ISUCON選挙結果</title>
+  </head>
+
+  <body>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="/">ISUCON選挙結果</a>
+        </div>
+        <div class="header clearfix">
+          <nav>
+            <ul class="nav nav-pills pull-right">
+              <li role="presentation"><a href="/vote">投票する</a></li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </nav>
+
 <div class="jumbotron">
   <div class="container">
     <h1>選挙の結果を大発表！</h1>
@@ -18,7 +41,7 @@
             {{ end }}
           </div>
           <div class="panel-body">
-            <p>得票数: {{ $candidate.VoteCount }}</p>
+            <p>得票数: {{ $candidate.VotedCount }}</p>
             <p>政党: {{ $candidate.PoliticalParty }}</p>
           </div>
         </div>
@@ -64,4 +87,7 @@
     </div>
   </div>
 </div>
-{{ end }}
+
+
+  </body>
+</html>
