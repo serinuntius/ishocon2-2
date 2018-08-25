@@ -312,6 +312,7 @@ func main() {
 			}
 		}()
 
+		user.close()
 		store.Flush()
 
 		if err := voteCache(c); err != nil {

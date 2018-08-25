@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -19,6 +20,22 @@ type User struct {
 	Votes      int
 }
 
+var userPool = sync.Pool{
+	New: func() interface{} {
+		return &User{}
+	},
+}
+
+func newUser() *User {
+	return userPool.Get().(*User)
+}
+
+func (u *User) close() {
+	userPool.Put(u)
+}
+
+
+
 func (u *User) MarshalBinary() (data []byte, err error) {
 	return json.Marshal(u)
 }
@@ -31,7 +48,7 @@ func (u *User) UnmarshalBinary(data []byte) error {
 }
 
 func getUser(ctx context.Context, name string, address string, myNumber string) (*User, error) {
-	user := User{}
+	user := newUser()
 
 	if err := rc.Get(myNumberKey(myNumber)).Scan(&user); err != nil && err != redis.Nil {
 		return nil, errors.Wrap(err, "Failed to redis Scan")
@@ -40,7 +57,7 @@ func getUser(ctx context.Context, name string, address string, myNumber string) 
 		if err := user.validate(name, address); err != nil {
 			return nil, errors.Wrap(err, "Failed to validate")
 		}
-		return &user, nil
+		return user, nil
 	}
 
 	row := db.QueryRowContext(ctx, "SELECT * FROM users WHERE mynumber = ?", myNumber)
@@ -56,7 +73,7 @@ func getUser(ctx context.Context, name string, address string, myNumber string) 
 		return nil, errors.Wrap(err, "Failed to Set cache")
 	}
 
-	return &user, nil
+	return user, nil
 }
 
 func myNumberKey(mynumber string) string {
