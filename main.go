@@ -92,7 +92,7 @@ func main() {
 			}
 		}
 
-		c.HTML(http.StatusOK, "base", gin.H{
+		c.HTML(http.StatusOK, "index.tmpl", gin.H{
 			"candidates": candidates,
 			"parties":    partyResults,
 			"sexRatio":   sexRatio,
@@ -110,7 +110,7 @@ func main() {
 		candidateIDs := []int{candidateID}
 		keywords := getVoiceOfSupporter(candidateIDs)
 
-		c.HTML(http.StatusOK, "base", gin.H{
+		c.HTML(http.StatusOK, "candidate.tmpl", gin.H{
 			"candidate": candidate,
 			"votes":     votes,
 			"keywords":  keywords,
@@ -135,7 +135,7 @@ func main() {
 		}
 		keywords := getVoiceOfSupporter(candidateIDs)
 
-		c.HTML(http.StatusOK, "base", gin.H{
+		c.HTML(http.StatusOK, "political_party.tmpl", gin.H{
 			"politicalParty": partyName,
 			"votes":          votes,
 			"candidates":     candidates,
@@ -147,7 +147,7 @@ func main() {
 	r.GET("/vote", func(c *gin.Context) {
 		candidates := getAllCandidate()
 
-		c.HTML(http.StatusOK, "base", gin.H{
+		c.HTML(http.StatusOK, "vote.tmpl", gin.H{
 			"candidates": candidates,
 			"message":    "",
 		})
@@ -178,7 +178,7 @@ func main() {
 			}
 			message = "投票に成功しました"
 		}
-		c.HTML(http.StatusOK, "base", gin.H{
+		c.HTML(http.StatusOK, "vote.tmpl", gin.H{
 			"candidates": candidates,
 			"message":    message,
 		})
