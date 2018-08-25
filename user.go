@@ -3,21 +3,18 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"sync"
-	"time"
 
-	"github.com/go-redis/redis"
 	"github.com/pkg/errors"
 )
 
 // User Model
 type User struct {
-	ID         int
-	Name       string
-	Address    string
-	MyNumber   string
-	Votes      int
+	ID       int
+	Name     string
+	Address  string
+	MyNumber string
+	Votes    int
 }
 
 var userPool = sync.Pool{
@@ -33,8 +30,6 @@ func newUser() *User {
 func (u *User) close() {
 	userPool.Put(u)
 }
-
-
 
 func (u *User) MarshalBinary() (data []byte, err error) {
 	return json.Marshal(u)
